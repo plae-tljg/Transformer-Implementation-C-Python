@@ -65,7 +65,8 @@ void self_attention_forward(
     SelfAttention* self_attn,
     float* input,           // [seq_len, head_dim]
     int seq_length,
-    float* output          // [seq_len, head_dim]
+    float* output,          // [seq_len, head_dim]
+    AttentionMask* mask    // 可选的注意力掩码
 ) {
     int head_dim = self_attn->head_dim;
     
@@ -114,6 +115,15 @@ void self_attention_forward(
                 score += query[i * head_dim + k] * key[j * head_dim + k];
             }
             attention_scores[i * seq_length + j] = score / scale;
+            
+            // 应用掩码（如果提供）
+            if (mask) {
+                attention_scores[i * seq_length + j] *= mask->mask[i * seq_length + j];
+                // 将被掩码的位置设置为非常小的负数（-inf）
+                if (mask->mask[i * seq_length + j] == 0) {
+                    attention_scores[i * seq_length + j] = -1e9f;
+                }
+            }
         }
     }
 

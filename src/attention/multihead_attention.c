@@ -74,7 +74,8 @@ void multihead_attention_forward(
     MultiHeadAttention* mha,
     float* input,           // [seq_len, model_dim]
     int seq_length,
-    float* output          // [seq_len, model_dim]
+    float* output,          // [seq_len, model_dim]
+    AttentionMask* mask    // 可选的注意力掩码
 ) {
     int head_dim = mha->head_dim;
     int model_dim = mha->model_dim;
@@ -94,8 +95,8 @@ void multihead_attention_forward(
             }
         }
 
-        // 计算当前头的注意力
-        self_attention_forward(mha->attention_heads[h], head_input, seq_length, temp_head_output);
+        // 计算当前头的注意力,传入掩码
+        self_attention_forward(mha->attention_heads[h], head_input, seq_length, temp_head_output, mask);
 
         // 将输出复制到对应位置
         for (int i = 0; i < seq_length; i++) {

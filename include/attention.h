@@ -3,6 +3,13 @@
 
 typedef struct SelfAttention SelfAttention;
 typedef struct MultiHeadAttention MultiHeadAttention;
+typedef struct AttentionMask AttentionMask;
+
+// 注意力掩码结构
+struct AttentionMask {
+    int seq_length;
+    float* mask;  // [seq_length, seq_length]
+};
 
 // 自注意力结构
 struct SelfAttention {
@@ -62,5 +69,8 @@ struct MultiHeadAttention {
     bool requires_grad;
 };
 
+// 添加掩码相关函数声明
+AttentionMask* attention_mask_create(int seq_length);
+void attention_mask_free(AttentionMask* mask);
 
 #endif
