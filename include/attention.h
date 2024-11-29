@@ -1,0 +1,66 @@
+#ifndef ATTENTION_H
+#define ATTENTION_H
+
+typedef struct SelfAttention SelfAttention;
+typedef struct MultiHeadAttention MultiHeadAttention;
+
+// 自注意力结构
+struct SelfAttention {
+    int head_dim;
+    int num_heads;
+    
+    // 权重
+    float* query_weights;
+    float* key_weights;
+    float* value_weights;
+    float* output_weights;
+    
+    // 偏置
+    float* query_bias;
+    float* key_bias;
+    float* value_bias;
+    float* output_bias;
+    
+    // // 梯度
+    // float* query_gradients;
+    // float* key_gradients;
+    // float* value_gradients;
+    // float* output_gradients;
+    
+    // // 偏置梯度
+    // float* query_bias_gradients;
+    // float* key_bias_gradients;
+    // float* value_bias_gradients;
+    // float* output_bias_gradients;
+    
+    bool requires_grad;
+};
+
+// 多头注意力结构
+struct MultiHeadAttention {
+    int num_heads;
+    int model_dim;
+    int head_dim;
+    
+    // 注意力头
+    SelfAttention** attention_heads;
+    
+    // 输出层
+    float* output_weights;
+    float* output_bias;
+    
+    // // 梯度
+    // float* output_weights_gradients;
+    // float* output_bias_gradients;
+    // float* attention_weights_gradients;
+    
+    // 缓存用于反向传播
+    float* input_cache;
+    float* attention_scores_cache;
+    float* attention_output_cache;
+    
+    bool requires_grad;
+};
+
+
+#endif
