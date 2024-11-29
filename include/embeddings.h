@@ -5,6 +5,13 @@
 #include <stdbool.h>
 typedef struct PositionalEncoding PositionalEncoding;
 typedef struct TokenEmbedding TokenEmbedding;
+typedef struct TransformerEmbedding TransformerEmbedding;
+
+// Transformer嵌入结构
+struct TransformerEmbedding {
+    TokenEmbedding* token_embedding;          // Token嵌入层
+    PositionalEncoding* positional_encoding;  // 位置编码层
+};
 
 // 位置编码结构
 struct PositionalEncoding {

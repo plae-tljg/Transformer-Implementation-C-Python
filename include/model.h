@@ -1,6 +1,6 @@
 #ifndef MODEL_H
 #define MODEL_H
-
+#include "layers.h"
 typedef struct ModelConfig ModelConfig;
 typedef struct TransformerModel TransformerModel;
 

@@ -60,6 +60,32 @@ TokenEmbedding* token_embedding_create(int vocab_size, int embedding_dim, bool r
     return token_emb;
 }
 
+// 创建Transformer嵌入层
+TransformerEmbedding* transformer_embedding_create(int vocab_size, int embedding_dim, int max_seq_length, bool requires_grad) {
+    TransformerEmbedding* trans_emb = (TransformerEmbedding*)malloc(sizeof(TransformerEmbedding));
+    if (!trans_emb) {
+        fprintf(stderr, "Failed to allocate memory for transformer embedding\n");
+        return NULL;
+    }
+
+    // 创建token嵌入
+    trans_emb->token_embedding = token_embedding_create(vocab_size, embedding_dim, requires_grad);
+    if (!trans_emb->token_embedding) {
+        free(trans_emb);
+        return NULL;
+    }
+
+    // 创建位置编码
+    trans_emb->positional_encoding = positional_encoding_create(max_seq_length, embedding_dim);
+    if (!trans_emb->positional_encoding) {
+        free_token_embedding(trans_emb->token_embedding);
+        free(trans_emb);
+        return NULL;
+    }
+
+    return trans_emb;
+}
+
 void free_positional_encoding(PositionalEncoding* pos_enc) {
     if (!pos_enc) return;
     
@@ -78,6 +104,14 @@ void free_token_embedding(TokenEmbedding* token_emb) {
     }
     
     free(token_emb);
+}
+
+void free_transformer_embedding(TransformerEmbedding* trans_emb) {
+    if (!trans_emb) return;
+    
+    free_token_embedding(trans_emb->token_embedding);
+    free_positional_encoding(trans_emb->positional_encoding);
+    free(trans_emb);
 }
 
 // Forward pass of the token embedding layer
@@ -114,4 +148,24 @@ void positional_encoding_forward(PositionalEncoding* pos_enc, int seq_length, fl
             encoding_dim * sizeof(float)
         );
     }
+}
+
+// Forward pass of transformer embedding layer
+void transformer_embedding_forward(TransformerEmbedding* trans_emb, int* tokens, int seq_length, float* output) {
+    int embedding_dim = trans_emb->token_embedding->embedding_dim;
+    
+    // 临时缓冲区用于存储token嵌入结果
+    float* token_output = (float*)malloc(seq_length * embedding_dim * sizeof(float));
+    
+    // 计算token嵌入
+    token_embedding_forward(trans_emb->token_embedding, tokens, token_output);
+    
+    // 复制token嵌入到输出
+    memcpy(output, token_output, seq_length * embedding_dim * sizeof(float));
+    
+    // 添加位置编码
+    positional_encoding_forward(trans_emb->positional_encoding, seq_length, output);
+    
+    // 释放临时缓冲区
+    free(token_output);
 }
