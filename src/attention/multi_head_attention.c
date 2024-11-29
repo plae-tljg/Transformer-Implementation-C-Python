@@ -7,6 +7,7 @@ float* compute_multi_head_attention(MultiHeadAttention* multi_attn,
                                   float* query,
                                   float* key,
                                   float* value,
+                                  float* attention_mask,
                                   int seq_length) {
     if (!multi_attn || !query || !key || !value || seq_length <= 0) return NULL;
     
@@ -17,63 +18,92 @@ float* compute_multi_head_attention(MultiHeadAttention* multi_attn,
     // 为每个头的输出分配内存
     float* head_outputs = malloc(seq_length * model_dim * sizeof(float));
     if (!head_outputs) return NULL;
+    memset(head_outputs, 0, seq_length * model_dim * sizeof(float));
     
     // 对每个注意力头进行计算
     for (int h = 0; h < num_heads; h++) {
         SelfAttention* head = multi_attn->attention_heads[h];
         
-        // 计算注意力输出
-        float* head_output = compute_self_attention_head(head, query, seq_length);
-        if (!head_output) {
+        // 计算Q、K、V矩阵
+        float* Q = matrix_multiply(query, head->query_weights, 
+                                 seq_length, model_dim, head_dim);
+        float* K = matrix_multiply(key, head->key_weights, 
+                                 seq_length, model_dim, head_dim);
+        float* V = matrix_multiply(value, head->value_weights, 
+                                 seq_length, model_dim, head_dim);
+        
+        if (!Q || !K || !V) {
+            free(Q);
+            free(K);
+            free(V);
             free(head_outputs);
             return NULL;
         }
         
-        // 将头的输出复制到相应位置
-        for (int i = 0; i < seq_length; i++) {
-            for (int j = 0; j < head_dim; j++) {
-                head_outputs[i * model_dim + h * head_dim + j] = 
-                    head_output[i * head_dim + j];
-            }
+        // 添加偏置
+        if (head->query_bias) matrix_add_inplace(Q, head->query_bias, seq_length * head_dim);
+        if (head->key_bias) matrix_add_inplace(K, head->key_bias, seq_length * head_dim);
+        if (head->value_bias) matrix_add_inplace(V, head->value_bias, seq_length * head_dim);
+        
+        // 计算注意力分数
+        float* attention_scores = matrix_multiply(Q, K, seq_length, head_dim, seq_length);
+        if (!attention_scores) {
+            free(Q); free(K); free(V); free(head_outputs);
+            return NULL;
         }
         
+        // 缩放注意力分数
+        float scale = 1.0f / sqrt((float)head_dim);
+        matrix_scale(attention_scores, scale, seq_length * seq_length);
+
+        // 如果提供了掩码，则应用掩码
+        if (attention_mask) {
+            apply_attention_mask(attention_scores, attention_mask, seq_length);
+        }
+
+        // 应用 softmax
+        softmax(attention_scores, seq_length * seq_length);
+
+        // 计算注意力输出
+        float* output = matrix_multiply(attention_scores, V, 
+                                      seq_length, seq_length, head_dim);
+        if (!output) {
+            free(Q); free(K); free(V); 
+            free(attention_scores); free(head_outputs);
+            return NULL;
+        }
+
+        // 合并到最终输出
+        float* head_output = matrix_multiply(output, head->output_weights,
+                                           seq_length, head_dim, model_dim);
+        if (!head_output) {
+            free(Q); free(K); free(V);
+            free(attention_scores); free(output); free(head_outputs);
+            return NULL;
+        }
+
+        // 添加到组合输出
+        matrix_add_inplace(head_outputs, head_output, seq_length * model_dim);
+
+        // 清理临时内存
+        free(Q); free(K); free(V);
+        free(attention_scores);
+        free(output);
         free(head_output);
     }
     
-    // 应用输出变换
+    // 应用输出变换和偏置
     float* final_output = matrix_multiply(head_outputs, multi_attn->output_weights,
                                         seq_length, model_dim, model_dim);
     free(head_outputs);
     
     if (!final_output) return NULL;
     
-    // 添加输出偏置
     if (multi_attn->output_bias) {
         for (int i = 0; i < seq_length; i++) {
             for (int j = 0; j < model_dim; j++) {
                 final_output[i * model_dim + j] += multi_attn->output_bias[j];
             }
-        }
-    }
-    
-    // 缓存用于反向传播
-    if (multi_attn->requires_grad) {
-        // 保存输入
-        if (multi_attn->input_cache) {
-            free(multi_attn->input_cache);
-        }
-        multi_attn->input_cache = malloc(seq_length * model_dim * sizeof(float));
-        if (multi_attn->input_cache) {
-            memcpy(multi_attn->input_cache, query, seq_length * model_dim * sizeof(float));
-        }
-        
-        // 保存注意力输出
-        if (multi_attn->attention_output_cache) {
-            free(multi_attn->attention_output_cache);
-        }
-        multi_attn->attention_output_cache = malloc(seq_length * model_dim * sizeof(float));
-        if (multi_attn->attention_output_cache) {
-            memcpy(multi_attn->attention_output_cache, head_outputs, seq_length * model_dim * sizeof(float));
         }
     }
     
