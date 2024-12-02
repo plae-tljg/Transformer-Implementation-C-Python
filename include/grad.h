@@ -85,9 +85,11 @@ float train_batch(
 // 训练一个epoch
 void train_epoch(
     Transformer* model,
-    int* train_data,     // [num_samples, max_len]
+    int* src_data,      // [num_samples, src_len]
+    int* tgt_data,      // [num_samples, tgt_len]
     int num_samples,
-    int max_len,
+    int src_len,
+    int tgt_len,
     TrainingConfig* config,
     OptimizerState* optimizer
 );
@@ -111,10 +113,10 @@ void update_encoder_layer_params(
 
 // 创建和释放梯度结构的函数
 TransformerGrad* create_transformer_grad(Transformer* model);
-void free_transformer_grad(TransformerGrad* grad);
+void free_transformer_grad(TransformerGrad* grad, Transformer* model);
 
 // 清零梯度
-void zero_transformer_grad(TransformerGrad* grad);
+void zero_transformer_grad(TransformerGrad* grad, Transformer* model);
 
 // 训练状态结构
 struct TrainingState {

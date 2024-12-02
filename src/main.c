@@ -169,14 +169,65 @@ int main(int argc, char **argv) {
         }
 
         printf("Starting training...\n");
-        // TODO: 实现训练循环
         
+        // 创建优化器
+        OptimizerState* optimizer = create_optimizer(model);
+        if (!optimizer) {
+            fprintf(stderr, "Failed to create optimizer\n");
+            free(config);
+            free_model(model);
+            return 1;
+        }
+
+        // 加载训练数据
+        int num_samples = 1000; // 示例数据量
+        int src_len = 50;  // 源序列长度
+        int tgt_len = 50;  // 目标序列长度
+        
+        int* src_data = malloc(num_samples * src_len * sizeof(int));
+        int* tgt_data = malloc(num_samples * tgt_len * sizeof(int));
+        
+        if (!src_data || !tgt_data) {
+            fprintf(stderr, "Failed to allocate training data\n");
+            free(optimizer);
+            free(config);
+            free_model(model);
+            return 1;
+        }
+
+        // 训练循环
+        for (int epoch = 0; epoch < config->max_epochs; epoch++) {
+            printf("Epoch %d/%d\n", epoch + 1, config->max_epochs);
+            
+            train_epoch(model, src_data, tgt_data, num_samples, 
+                       src_len, tgt_len, config, optimizer);
+        }
+
+        // 清理
+        free(src_data);
+        free(tgt_data);
+        free(optimizer);
         free(config);
     } else {
         // 生成模式
         if (model_path) {
-            // TODO: 实现模型加载
-            printf("Loading model from: %s\n", model_path);
+            FILE* model_file = fopen(model_path, "rb");
+            if (!model_file) {
+                fprintf(stderr, "Failed to open model file: %s\n", model_path);
+                free_model(model);
+                return 1;
+            }
+            
+            // 加载模型参数
+            if (!load_model_parameters(model, model_file)) {
+                fprintf(stderr, "Failed to load model parameters\n");
+                fclose(model_file);
+                free_model(model);
+                return 1;
+            }
+            
+            fclose(model_file);
+            printf("Successfully loaded model from: %s\n", model_path);
         }
 
         printf("Entering interactive generation mode (type 'quit' to exit)\n");

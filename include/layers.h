@@ -114,8 +114,17 @@ struct Transformer {
 Transformer* transformer_create(int vocab_size, int model_dim, int num_heads, int num_layers,
                              int ff_hidden_dim, bool requires_grad);
 void transformer_free(Transformer* transformer);
-void transformer_forward(Transformer* transformer, int* src_tokens, int* tgt_tokens,
-                       int batch_size, int src_len, int tgt_len, float* output);
+void transformer_forward(
+    Transformer* transformer, 
+    int* src_tokens, 
+    int* tgt_tokens,
+    int batch_size,
+    int src_len,
+    int tgt_len,
+    // float* encoder_output,  // [batch_size, src_len, model_dim]
+    // float* decoder_output,  // [batch_size, tgt_len, model_dim]
+    float* output          // [batch_size, tgt_len, vocab_size]
+);
 void transformer_generate(Transformer* transformer, int* src_tokens, int batch_size,
                         int src_len, int max_len, float temperature, int* output_tokens);
 

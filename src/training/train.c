@@ -27,9 +27,7 @@ float train_batch(
         tgt_tokens, 
         batch_size, 
         src_len, 
-        tgt_len, 
-        encoder_output,
-        decoder_output,
+        tgt_len,
         output
     );
     
