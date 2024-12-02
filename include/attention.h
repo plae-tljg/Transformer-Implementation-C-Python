@@ -1,6 +1,7 @@
 #ifndef ATTENTION_H
 #define ATTENTION_H
 
+#include <stdbool.h>
 typedef struct SelfAttention SelfAttention;
 typedef struct MultiHeadAttention MultiHeadAttention;
 typedef struct AttentionMask AttentionMask;
@@ -13,7 +14,7 @@ struct AttentionMask {
 
 // 自注意力结构
 struct SelfAttention {
-    int head_dim;
+    int head_dim;   // 注意力头维度, d_model / num_heads
     int num_heads;
     
     // 权重
@@ -72,5 +73,16 @@ struct MultiHeadAttention {
 // 添加掩码相关函数声明
 AttentionMask* attention_mask_create(int seq_length);
 void attention_mask_free(AttentionMask* mask);
+
+// 添加以下函数声明
+void multihead_attention_free(MultiHeadAttention* mha);
+SelfAttention* self_attention_create(int num_heads, int head_dim, bool requires_grad);
+void self_attention_free(SelfAttention* self_attn);
+void self_attention_forward(SelfAttention* self_attn, float* input, int seq_length, float* output, AttentionMask* mask);
+
+// 添加多头注意力相关函数声明
+MultiHeadAttention* multihead_attention_create(int num_heads, int model_dim, bool requires_grad);
+void multihead_attention_free(MultiHeadAttention* mha);
+void multihead_attention_forward(MultiHeadAttention* mha, float* input, int seq_length, float* output, AttentionMask* mask);
 
 #endif

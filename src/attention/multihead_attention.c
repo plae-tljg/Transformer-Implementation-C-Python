@@ -28,7 +28,7 @@ MultiHeadAttention* multihead_attention_create(int num_heads, int model_dim, boo
 
     // 初始化每个注意力头
     for (int i = 0; i < num_heads; i++) {
-        mha->attention_heads[i] = self_attention_create(mha->head_dim, num_heads, requires_grad);
+        mha->attention_heads[i] = self_attention_create(num_heads, mha->head_dim, requires_grad);
         if (!mha->attention_heads[i]) {
             // 清理已分配的内存
             for (int j = 0; j < i; j++) {

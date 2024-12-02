@@ -1,8 +1,8 @@
 #ifndef EMBEDDINGS_H
 #define EMBEDDINGS_H
 
-
 #include <stdbool.h>
+#include "model.h"
 typedef struct PositionalEncoding PositionalEncoding;
 typedef struct TokenEmbedding TokenEmbedding;
 typedef struct TransformerEmbedding TransformerEmbedding;
@@ -45,6 +45,14 @@ void token_embedding_forward(TokenEmbedding* embedding, int* tokens, float* outp
 
 // 位置编码前向传播
 void positional_encoding_forward(PositionalEncoding* pos_enc, int seq_length, float* output);
+
+// Transformer embedding functions
+void transformer_embedding_forward(TransformerEmbedding* trans_emb, int* tokens, int seq_length, float* output);
+
+// Memory management functions
+void free_token_embedding(TokenEmbedding* token_emb);
+void free_positional_encoding(PositionalEncoding* pos_enc);
+void free_transformer_embedding(TransformerEmbedding* trans_emb);
 
 
 #endif

@@ -6,7 +6,7 @@
 #include <stdbool.h>
 
 // 创建自注意力层
-SelfAttention* self_attention_create(int head_dim, int num_heads, bool requires_grad) {
+SelfAttention* self_attention_create(int num_heads, int head_dim, bool requires_grad) {
     SelfAttention* self_attn = (SelfAttention*)malloc(sizeof(SelfAttention));
     if (!self_attn) {
         fprintf(stderr, "Failed to allocate memory for self attention\n");
@@ -17,14 +17,14 @@ SelfAttention* self_attention_create(int head_dim, int num_heads, bool requires_
     self_attn->num_heads = num_heads;
     self_attn->requires_grad = requires_grad;
 
-    // 分配权重内存
+    // 分配权重内存 [head_dim, head_dim]
     int weight_size = head_dim * head_dim;
     self_attn->query_weights = (float*)malloc(weight_size * sizeof(float));
     self_attn->key_weights = (float*)malloc(weight_size * sizeof(float));
     self_attn->value_weights = (float*)malloc(weight_size * sizeof(float));
     self_attn->output_weights = (float*)malloc(weight_size * sizeof(float));
 
-    // 分配偏置内存
+    // 分配偏置内存 [head_dim]
     self_attn->query_bias = (float*)malloc(head_dim * sizeof(float));
     self_attn->key_bias = (float*)malloc(head_dim * sizeof(float));
     self_attn->value_bias = (float*)malloc(head_dim * sizeof(float));
@@ -66,17 +66,17 @@ void self_attention_forward(
     float* input,           // [seq_len, head_dim]
     int seq_length,
     float* output,          // [seq_len, head_dim]
-    AttentionMask* mask    // 可选的注意力掩码
+    AttentionMask* mask    // [seq_len, seq_len] 可选的注意力掩码
 ) {
     int head_dim = self_attn->head_dim;
     
     // 临时缓冲区
-    float* query = (float*)malloc(seq_length * head_dim * sizeof(float));
-    float* key = (float*)malloc(seq_length * head_dim * sizeof(float));
-    float* value = (float*)malloc(seq_length * head_dim * sizeof(float));
-    float* attention_scores = (float*)malloc(seq_length * seq_length * sizeof(float));
+    float* query = (float*)malloc(seq_length * head_dim * sizeof(float));  // [seq_len, head_dim]
+    float* key = (float*)malloc(seq_length * head_dim * sizeof(float));    // [seq_len, head_dim]
+    float* value = (float*)malloc(seq_length * head_dim * sizeof(float));  // [seq_len, head_dim]
+    float* attention_scores = (float*)malloc(seq_length * seq_length * sizeof(float)); // [seq_len, seq_len]
 
-    // 计算Q、K、V
+    // 计算Q、K、V: [seq_len, head_dim] = [seq_len, head_dim] × [head_dim, head_dim] + [head_dim]
     for (int i = 0; i < seq_length; i++) {
         // Q = input * Wq + bq
         for (int j = 0; j < head_dim; j++) {
@@ -106,7 +106,8 @@ void self_attention_forward(
         }
     }
 
-    // 计算注意力分数 Q * K^T / sqrt(d_k)
+    // 计算注意力分数: Q * K^T / sqrt(d_k)
+    // [seq_len, seq_len] = [seq_len, head_dim] × [head_dim, seq_len] / sqrt(head_dim)
     float scale = sqrtf(head_dim);
     for (int i = 0; i < seq_length; i++) {
         for (int j = 0; j < seq_length; j++) {
@@ -127,7 +128,7 @@ void self_attention_forward(
         }
     }
 
-    // Softmax
+    // Softmax: [seq_len, seq_len] -> [seq_len, seq_len]
     for (int i = 0; i < seq_length; i++) {
         float max_val = attention_scores[i * seq_length];
         for (int j = 1; j < seq_length; j++) {
@@ -147,7 +148,8 @@ void self_attention_forward(
         }
     }
 
-    // 计算输出 Attention(Q,K,V) = softmax(QK^T/sqrt(d_k))V
+    // 计算输出: Attention(Q,K,V) = softmax(QK^T/sqrt(d_k))V
+    // [seq_len, head_dim] = [seq_len, seq_len] × [seq_len, head_dim]
     for (int i = 0; i < seq_length; i++) {
         for (int j = 0; j < head_dim; j++) {
             float sum = 0.0f;

@@ -1,6 +1,9 @@
 #ifndef MODEL_H
 #define MODEL_H
+
+#include <stdbool.h>
 #include "layers.h"
+
 typedef struct ModelConfig ModelConfig;
 typedef struct TransformerModel TransformerModel;
 
@@ -41,5 +44,19 @@ struct TransformerModel {
     ModelConfig* config;
 };
 
+// // 在model.h中定义前向传播函数的接口
+// void transformer_forward(
+//     Transformer* model,
+//     int* src_tokens,        // [batch_size, src_len]
+//     int* tgt_tokens,        // [batch_size, tgt_len]
+//     int batch_size,
+//     int src_len,
+//     int tgt_len,
+//     float* encoder_output,  // [batch_size, src_len, model_dim]
+//     float* decoder_output,  // [batch_size, tgt_len, model_dim]
+//     float* output          // [batch_size, tgt_len, vocab_size]
+// );
+
+void free_model(TransformerModel* model);
 
 #endif

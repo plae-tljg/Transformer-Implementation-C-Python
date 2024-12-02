@@ -1,4 +1,5 @@
 #include "layers.h"
+#include "embeddings.h"
 #include <stdlib.h>
 #include <string.h>
 
@@ -9,10 +10,10 @@ DecoderLayer* decoder_layer_create(int model_dim, int num_heads, int ff_hidden_d
     decoder->model_dim = model_dim;
 
     // 创建自注意力层
-    decoder->self_attention = multi_head_attention_create(model_dim, num_heads, requires_grad);
+    decoder->self_attention = multihead_attention_create(model_dim, num_heads, requires_grad);
     
     // 创建交叉注意力层
-    decoder->cross_attention = multi_head_attention_create(model_dim, num_heads, requires_grad);
+    decoder->cross_attention = multihead_attention_create(model_dim, num_heads, requires_grad);
     
     // 创建三个层归一化
     decoder->norm1 = layer_norm_create(model_dim, 1e-5, requires_grad);
@@ -36,10 +37,10 @@ DecoderLayer* decoder_layer_create(int model_dim, int num_heads, int ff_hidden_d
 void decoder_layer_free(DecoderLayer* decoder) {
     if (decoder) {
         if (decoder->self_attention) {
-            multi_head_attention_free(decoder->self_attention);
+            multihead_attention_free(decoder->self_attention);
         }
         if (decoder->cross_attention) {
-            multi_head_attention_free(decoder->cross_attention);
+            multihead_attention_free(decoder->cross_attention);
         }
         if (decoder->norm1) {
             layer_norm_free(decoder->norm1);
@@ -86,15 +87,12 @@ void decoder_layer_forward(
     }
 
     // 1. 掩码自注意力层
-    multi_head_attention_forward(
+    multihead_attention_forward(
         decoder->self_attention,
         input,           // query
-        input,           // key
-        input,           // value
-        tgt_mask,        // mask
-        batch_size,
-        tgt_len,
-        self_attn_output
+        tgt_len,         // seq_length
+        self_attn_output,
+        tgt_mask           // mask
     );
 
     // 2. 第一个残差连接和层归一化
@@ -114,15 +112,12 @@ void decoder_layer_forward(
     }
 
     // 3. 交叉注意力层
-    multi_head_attention_forward(
+    multihead_attention_forward(
         decoder->cross_attention,
         norm1_output,    // query
-        encoder_output,  // key
-        encoder_output,  // value
-        NULL,           // 交叉注意力不需要mask
-        batch_size,
-        tgt_len,
-        cross_attn_output
+        src_len,         // seq_length
+        cross_attn_output,
+        NULL           // 交叉注意力不需要mask
     );
 
     // 4. 第二个残差连接和层归一化

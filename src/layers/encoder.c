@@ -9,7 +9,7 @@ EncoderLayer* encoder_layer_create(int model_dim, int num_heads, int ff_hidden_d
     encoder->model_dim = model_dim;
 
     // 创建多头自注意力层
-    encoder->self_attention = multi_head_attention_create(model_dim, num_heads, requires_grad);
+    encoder->self_attention = multihead_attention_create(model_dim, num_heads, requires_grad);
     
     // 创建两个层归一化
     encoder->norm1 = layer_norm_create(model_dim, 1e-5, requires_grad);
@@ -31,7 +31,7 @@ EncoderLayer* encoder_layer_create(int model_dim, int num_heads, int ff_hidden_d
 void encoder_layer_free(EncoderLayer* encoder) {
     if (encoder) {
         if (encoder->self_attention) {
-            multi_head_attention_free(encoder->self_attention);
+            multihead_attention_free(encoder->self_attention);
         }
         if (encoder->norm1) {
             layer_norm_free(encoder->norm1);
@@ -67,15 +67,12 @@ void encoder_layer_forward(
     }
 
     // 1. 自注意力层
-    multi_head_attention_forward(
+    multihead_attention_forward(
         encoder->self_attention,
         input,          // query
-        input,          // key
-        input,          // value
-        NULL,           // mask (不需要mask)
-        batch_size,
         seq_len,
-        attn_output
+        attn_output,
+        NULL           // mask参数
     );
 
     // 2. 第一个残差连接和层归一化

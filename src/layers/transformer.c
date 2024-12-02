@@ -35,7 +35,7 @@ Transformer* transformer_create(
     // 创建位置编码
     transformer->pos_enc = positional_encoding_create(model_dim, 1024); // 最大位置1024
     
-    // 创建编码器和解码器堆栈
+    // 创建��码器和解码器堆栈
     transformer->encoder = encoder_create(num_layers, model_dim, num_heads, ff_hidden_dim, requires_grad);
     transformer->decoder = decoder_create(num_layers, model_dim, num_heads, ff_hidden_dim, requires_grad);
 
@@ -64,9 +64,9 @@ Transformer* transformer_create(
 
 void transformer_free(Transformer* transformer) {
     if (transformer) {
-        if (transformer->src_embed) token_embedding_free(transformer->src_embed);
-        if (transformer->tgt_embed) token_embedding_free(transformer->tgt_embed);
-        if (transformer->pos_enc) positional_encoding_free(transformer->pos_enc);
+        if (transformer->src_embed) free_token_embedding(transformer->src_embed);
+        if (transformer->tgt_embed) free_token_embedding(transformer->tgt_embed);
+        if (transformer->pos_enc) free_positional_encoding(transformer->pos_enc);
         if (transformer->encoder) encoder_free(transformer->encoder);
         if (transformer->decoder) decoder_free(transformer->decoder);
         free(transformer->linear_weight);
@@ -106,11 +106,11 @@ void transformer_forward(
 
     // 1. 源语言词嵌入和位置编码
     token_embedding_forward(transformer->src_embed, src_tokens, batch_size, src_len, src_embedded);
-    positional_encoding_add(transformer->pos_enc, src_embedded, batch_size, src_len);
+    positional_encoding_forward(transformer->pos_enc, src_embedded, batch_size, src_len);
 
     // 2. 目标语言词嵌入和位置编码
     token_embedding_forward(transformer->tgt_embed, tgt_tokens, batch_size, tgt_len, tgt_embedded);
-    positional_encoding_add(transformer->pos_enc, tgt_embedded, batch_size, tgt_len);
+    positional_encoding_forward(transformer->pos_enc, tgt_embedded, batch_size, tgt_len);
 
     // 3. 编码器前向传播
     encoder_forward(transformer->encoder, src_embedded, batch_size, src_len, encoder_output);
@@ -193,7 +193,7 @@ void transformer_generate(
     
     // 编码器前向传播
     token_embedding_forward(transformer->src_embed, src_tokens, batch_size, src_len, src_embedded);
-    positional_encoding_add(transformer->pos_enc, src_embedded, batch_size, src_len);
+    positional_encoding_forward(transformer->pos_enc, src_embedded, batch_size, src_len);
     encoder_forward(transformer->encoder, src_embedded, batch_size, src_len, encoder_output);
 
     // 逐token生成
@@ -205,7 +205,7 @@ void transformer_generate(
 
         // 解码器前向传播
         token_embedding_forward(transformer->tgt_embed, output_tokens, batch_size, t + 1, tgt_embedded);
-        positional_encoding_add(transformer->pos_enc, tgt_embedded, batch_size, t + 1);
+        positional_encoding_forward(transformer->pos_enc, tgt_embedded, batch_size, t + 1);
         
         decoder_forward(
             transformer->decoder,

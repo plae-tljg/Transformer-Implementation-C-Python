@@ -1,5 +1,7 @@
 {
     "files.associations": {
-        "layers.h": "c"
+        "layers.h": "c",
+        "training.h": "c",
+        "stdlib.h": "c"
     }
 }
