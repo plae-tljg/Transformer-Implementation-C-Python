@@ -131,7 +131,7 @@ void train_epoch(
         );
         
         // 清零梯度，准备下一个批次
-        zero_transformer_grad(grad);
+        zero_transformer_grad(grad, model);
         
         // 打印训练进度
         if (batch % 100 == 0) {
@@ -140,5 +140,5 @@ void train_epoch(
     }
     
     // 释放梯度结构
-    free_transformer_grad(grad);
+    free_transformer_grad(grad, model);
 }

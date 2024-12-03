@@ -134,46 +134,46 @@ void update_embedding_params(
     );
 }
 
-void update_encoder_layer_params(
-    EncoderLayer* layer,
-    EncoderLayerGrad* grad,
-    OptimizerState* opt,
-    float lr,
-    float weight_decay
-) {
-    // 更新自注意力层参数
-    update_attention_params(
-        layer->self_attention,
-        grad->self_attention_grad,
-        opt,
-        lr,
-        weight_decay
-    );
+// void update_encoder_layer_params(
+//     EncoderLayer* layer,
+//     EncoderLayerGrad* grad,
+//     OptimizerState* opt,
+//     float lr,
+//     float weight_decay
+// ) {
+//     // 更新自注意力层参数
+//     update_attention_params(
+//         layer->self_attention,
+//         grad->self_attention_grad,
+//         opt,
+//         lr,
+//         weight_decay
+//     );
     
-    // 更新前馈网络参数
-    update_feedforward_params(
-        layer->feed_forward,
-        grad->feed_forward_grad,
-        opt,
-        lr,
-        weight_decay
-    );
+//     // 更新前馈网络参数
+//     update_feedforward_params(
+//         layer->feed_forward,
+//         grad->feed_forward_grad,
+//         opt,
+//         lr,
+//         weight_decay
+//     );
     
-    // 更新层归一化参数
-    update_layernorm_params(
-        layer->norm1,
-        grad->norm1_grad,
-        opt,
-        lr,
-        weight_decay
-    );
-    update_layernorm_params(
-        layer->norm2,
-        grad->norm2_grad,
-        opt,
-        lr,
-        weight_decay
-    );
-}
+//     // 更新层归一化参数
+//     update_layernorm_params(
+//         layer->norm1,
+//         grad->norm1_grad,
+//         opt,
+//         lr,
+//         weight_decay
+//     );
+//     update_layernorm_params(
+//         layer->norm2,
+//         grad->norm2_grad,
+//         opt,
+//         lr,
+//         weight_decay
+//     );
+// }
 
-// 类似地实现update_decoder_layer_params... 
+// // 类似地实现update_decoder_layer_params... 
