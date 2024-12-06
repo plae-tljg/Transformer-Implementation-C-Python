@@ -1,7 +1,8 @@
 {
-    "files.associations": {
-        "layers.h": "c",
-        "training.h": "c",
-        "stdlib.h": "c"
+    "files.exclude": {
+        "**/educational": true
+    },
+    "C_Cpp.files.exclude": {
+        "**/educational/**": true
     }
-}
+} 

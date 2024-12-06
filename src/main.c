@@ -6,7 +6,7 @@
 
 /* Project Headers */
 #include "training.h"
-#include "model.h"
+#include "model_config.h"
 #include "embeddings.h"
 #include "layers.h"
 #include "attention.h"
@@ -18,6 +18,8 @@
 #define DEFAULT_NUM_LAYERS 6
 #define DEFAULT_FF_DIM 2048
 #define MAX_SEQ_LENGTH 1024
+#define DEFAULT_BATCH_SIZE 32
+#define DEFAULT_DROPOUT_PROB 0.1f
 
 void print_usage() {
     printf("用法：\n");
@@ -113,6 +115,8 @@ void generate_text(TransformerModel* model, const char* input_text) {
 }
 
 int main(int argc, char **argv) {
+    init_model_config(DEFAULT_BATCH_SIZE, MAX_SEQ_LENGTH, DEFAULT_VOCAB_SIZE, 
+                      DEFAULT_MODEL_DIM, DEFAULT_NUM_HEADS, DEFAULT_DROPOUT_PROB);
     if (argc < 2) {
         print_usage();
         return 1;
