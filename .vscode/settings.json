@@ -1,0 +1,8 @@
+{
+    "files.associations": {
+        "tensor_reshape.h": "c",
+        "tensor_mul.h": "c",
+        "tensor_logic.h": "c",
+        "tensor_type.h": "c"
+    }
+}
