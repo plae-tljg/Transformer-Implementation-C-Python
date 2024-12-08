@@ -4,7 +4,7 @@
 #include "encoder.h"
 #include "decoder.h"
 #include "tensor_type.h"
-#include "01attention_mask.h"
+#include "attention_mask.h"
 
 typedef struct Transformer {
     Encoder* encoder;

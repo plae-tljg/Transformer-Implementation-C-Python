@@ -2,7 +2,7 @@
 #define ENCODER_LAYER_H
 
 #include "tensor_type.h"
-#include "02multiattention.h"
+#include "multiattention.h"
 #include "layer_norm.h"
 #include "feed_forward.h"
 

@@ -177,34 +177,108 @@ bool tensor_matmul_4d(const Tensor* left, const Tensor* right, Tensor* output) {
     return true;
 }
 
-// 将3D输入与2D权重相乘并重塑为4D输出, on Q,K,V running separately
-// input: [batch_size, seq_len, model_dim]
-// weight: [model_dim, model_dim],
-// output: [batch_size, seq_len, model_dim]
+// 4D张量与2D权重相乘
+// input: [batch1, batch2, seq_len, dim1]
+// weight: [dim1, dim2]
+// output: [batch1, batch2, seq_len, dim2]
+bool tensor_mul_4d_2d(
+    const Tensor* input,
+    const Tensor* weight,
+    Tensor* output
+) {
+    // 检查维度
+    if (input->num_dims != 4 || weight->num_dims != 2) {
+        fprintf(stderr, "输入维度错误：需要4D输入和2D权重\n");
+        return false;
+    }
+
+    int batch1 = input->shape[0];
+    int batch2 = input->shape[1];
+    int seq_len = input->shape[2];
+    int dim1 = input->shape[3];
+    int dim2 = weight->shape[1];
+
+    // 检查维度匹配
+    if (weight->shape[0] != dim1) {
+        fprintf(stderr, "维度不匹配：输入的最后一维必须等于权重的第一维\n");
+        return false;
+    }
+
+    // 检查输出维度
+    if (output->num_dims != 4 ||
+        output->shape[0] != batch1 ||
+        output->shape[1] != batch2 ||
+        output->shape[2] != seq_len ||
+        output->shape[3] != dim2) {
+        fprintf(stderr, "输出张量维度无效\n");
+        return false;
+    }
+
+    // 对每个batch和序列位置进行矩阵乘法
+    for (int b1 = 0; b1 < batch1; b1++) {
+        for (int b2 = 0; b2 < batch2; b2++) {
+            for (int s = 0; s < seq_len; s++) {
+                // 计算当前位置的基础偏移量
+                int input_offset = ((b1 * batch2 + b2) * seq_len + s) * dim1;
+                int output_offset = ((b1 * batch2 + b2) * seq_len + s) * dim2;
+
+                // 执行矩阵乘法 [dim1] x [dim1, dim2]
+                for (int j = 0; j < dim2; j++) {
+                    float sum = 0.0f;
+                    for (int k = 0; k < dim1; k++) {
+                        sum += input->data[input_offset + k] * 
+                              weight->data[k * dim2 + j];
+                    }
+                    output->data[output_offset + j] = sum;
+                }
+            }
+        }
+    }
+    return true;
+}
+
+// 将3D输入与非方阵2D权重相乘, on Q,K,V running separately
+// input: [batch_size, seq_len, dim_in]
+// weight: [dim_in, dim_out]
+// output: [batch_size, seq_len, dim_out]
 bool tensor_mul_3_2(
     const Tensor* input,
     const Tensor* weight,
     Tensor* output
 ){
-    int batch_size = input->shape[0];
-    int seq_len = input->shape[1];  // length of the sequence
-    int model_dim = input->shape[2]; // model dimension
-    
+    // 检查维度
+    if (input->num_dims != 3 || weight->num_dims != 2 || output->num_dims != 3) {
+        fprintf(stderr, "输入维度错误：需要3D输入、2D权重和3D输出\n");
+        return false;
+    }
 
-    // 进行批量矩阵乘法: [batch_size, seq_len, model_dim] @ [model_dim, model_dim] for last 2 dimensions
-    // optimize later for gpu and blas
+    int batch_size = input->shape[0];
+    int seq_len = input->shape[1];
+    int dim_in = input->shape[2];
+    int dim_out = weight->shape[1];
+
+    // 检查维度匹配
+    if (weight->shape[0] != dim_in ||
+        output->shape[0] != batch_size ||
+        output->shape[1] != seq_len ||
+        output->shape[2] != dim_out) {
+        fprintf(stderr, "维度不匹配\n");
+        return false;
+    }
+
+    // 进行批量矩阵乘法: [batch_size, seq_len, dim_in] @ [dim_in, dim_out]
     for (int b = 0; b < batch_size; b++) {
-        int input_offset = b * seq_len * model_dim;
-        // 执行矩阵乘法 [seq_len, model_dim] x [model_dim, model_dim]
+        int input_offset = b * seq_len * dim_in;
+        int output_offset = b * seq_len * dim_out;
         for (int i = 0; i < seq_len; i++) {
-            for (int j = 0; j < model_dim; j++) {
+            for (int j = 0; j < dim_out; j++) {
                 float sum = 0.0f;
-                for (int k = 0; k < model_dim; k++) {
-                    // input[b,i,k] * weight[k,j] to output[b,i,j]
-                    sum += input->data[(b * seq_len * model_dim) + (i * model_dim) + k] * 
-                           weight->data[k * model_dim + j];
+                for (int k = 0; k < dim_in; k++) {
+                    // input[b,i,k] * weight[k,j] -> output[b,i,j]
+                    sum += input->data[input_offset + (i * dim_in) + k] * 
+                          weight->data[k * dim_out + j];
                 }
-                output->data[(b * seq_len * model_dim) + (i * model_dim) + j] = sum;
+                output->data[output_offset + (i * dim_out) + j] = sum;
             }
         }
     }

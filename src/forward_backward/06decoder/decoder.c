@@ -23,6 +23,13 @@ Decoder* decoder_create(int num_layers, int num_heads, int model_dim,
             return NULL;
         }
     }
+
+    // 添加最后的线性层
+    decoder->output_linear = linear_create(model_dim, model_dim);
+    if (!decoder->output_linear) {
+        decoder_free(decoder);
+        return NULL;
+    }
     
     return decoder;
 }
@@ -52,7 +59,12 @@ bool decoder_forward(
             return false;
         }
     }
-    
+
+    // 通过最后的线性层
+    if (!linear_forward(decoder->output_linear, output, output)) {
+        return false;
+    }
+
     return true;
 }
 
@@ -63,6 +75,9 @@ void decoder_free(Decoder* decoder) {
                 decoder_layer_free(decoder->layers[i]);
             }
             free(decoder->layers);
+        }
+        if (decoder->output_linear) {
+            linear_free(decoder->output_linear);
         }
         free(decoder);
     }

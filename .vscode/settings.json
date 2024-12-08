@@ -3,6 +3,8 @@
         "tensor_reshape.h": "c",
         "tensor_mul.h": "c",
         "tensor_logic.h": "c",
-        "tensor_type.h": "c"
+        "tensor_type.h": "c",
+        "multiattention_backward.h": "c",
+        "linear.h": "c"
     }
 }

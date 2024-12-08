@@ -2,7 +2,7 @@
 #define MULTIATTENTION_H
 
 #include "tensor_type.h"
-#include "01attention_mask.h"
+#include "attention_mask.h"
 
 typedef struct MultiHeadAttention MultiHeadAttention;
 

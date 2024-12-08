@@ -7,6 +7,11 @@ bool tensor_matmul_2d(const Tensor* A, const Tensor* B, Tensor* C);  // 2D矩阵
 bool tensor_matmul_3d(const Tensor* A, const Tensor* B, Tensor* C);  // 3D张量乘法 [batch, M, K] × [batch, K, N]
 bool tensor_matmul_4d(const Tensor* A, const Tensor* B, Tensor* C);  // 4D张量乘法 [b1, b2, M, K] × [b1, b2, K, N]
 
+bool tensor_mul_4d_2d(
+    const Tensor* input,
+    const Tensor* weight,
+    Tensor* output
+);
 
 // 3D张量与2D权重相乘
 // input: [batch_size, seq_len, model_dim]

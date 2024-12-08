@@ -2,10 +2,12 @@
 #define DECODER_H
 
 #include "decoder_layer.h"
+#include "linear.h"
 
 typedef struct Decoder {
     int num_layers;           // 解码器层数量
     DecoderLayer** layers;    // 解码器层数组
+    Linear* output_linear;    // 输出线性层
 } Decoder;
 
 // 创建解码器
